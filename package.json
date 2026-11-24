@@ -1,0 +1,19 @@
+{
+  "name": "insane-aquarium-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --preserve-symlinks --preserve-symlinks-main node_modules/typescript/bin/tsc --noEmit",
+    "build": "node --preserve-symlinks --preserve-symlinks-main scripts/build.mjs",
+    "test": "npm run build && node --preserve-symlinks --preserve-symlinks-main --test scripts/tank.test.mjs",
+    "prestart": "npm run build",
+    "start": "node --preserve-symlinks-main scripts/serve.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

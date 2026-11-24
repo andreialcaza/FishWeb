@@ -1,0 +1,34 @@
+{
+  "background": "../images/aquarium1.jpg",
+  "fish": {
+    "src": "../images/smallswim.gif",
+    "alpha": "../images/smallswim_.gif",
+    "columns": 10,
+    "rows": 5,
+    "variantRows": { "1": 1, "2": 2 },
+    "frameCount": 10,
+    "fps": 14,
+    "faces": "left",
+    "drawSize": 80
+  },
+  "food": {
+    "src": "../images/food.gif",
+    "alpha": "../images/_food.gif",
+    "columns": 10,
+    "rows": 5,
+    "frameCount": 10,
+    "fps": 12,
+    "drawSize": 16
+  },
+  "coin": {
+    "src": "../images/money.gif",
+    "alpha": "../images/money_.gif",
+    "columns": 10,
+    "rows": 6,
+    "row": 1,
+    "variantRows": { "15": 0 },
+    "frameCount": 10,
+    "fps": 15,
+    "drawSize": 46
+  }
+}
