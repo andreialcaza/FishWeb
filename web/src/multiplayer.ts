@@ -24,12 +24,16 @@ declare global {
 type RoomMessage =
   | { type: "hello"; name: string }
   | { type: "roster"; players: string[] }
-  | { type: "leave" };
+  | { type: "leave" }
+  | { type: "game"; payload: Record<string, unknown> }
+  | { type: "game-request"; payload: Record<string, unknown> };
 
 export interface MultiplayerCallbacks {
   status(message: string): void;
   roomCode(code: string): void;
   players(names: readonly string[]): void;
+  gameMessage(payload: Record<string, unknown>): void;
+  gameRequest(payload: Record<string, unknown>): void;
 }
 
 export class MultiplayerRoom {
@@ -102,6 +106,14 @@ export class MultiplayerRoom {
     this.callbacks.status("Not connected to a room.");
   }
 
+  sendGame(payload: Record<string, unknown>): void {
+    if (this.host) this.broadcast({ type: "game", payload });
+    else {
+      const connection = this.connections.get(this.roomCodeValue);
+      if (connection?.open) connection.send({ type: "game-request", payload });
+    }
+  }
+
   get isHost(): boolean { return this.host; }
   get roomCode(): string { return this.roomCodeValue; }
 
@@ -130,6 +142,10 @@ export class MultiplayerRoom {
     if (message.type === "hello" && this.host && typeof message.name === "string") {
       this.names.set(connection.peer, cleanName(message.name));
       this.publishRoster();
+    } else if (message.type === "game-request" && this.host && message.payload && typeof message.payload === "object") {
+      this.callbacks.gameRequest(message.payload as Record<string, unknown>);
+    } else if (message.type === "game" && !this.host && message.payload && typeof message.payload === "object") {
+      this.callbacks.gameMessage(message.payload as Record<string, unknown>);
     } else if (message.type === "leave" && this.host) {
       this.connections.delete(connection.peer);
       this.publishRoster();
