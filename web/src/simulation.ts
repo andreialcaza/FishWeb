@@ -106,6 +106,7 @@ export interface TankOptions {
   playSound?: PlaySound;
   virtualTank?: VirtualTankSave;
   onFishSong?: (fish: VirtualFish) => void;
+  seed?: number;
 }
 
 export type TankStatus = "playing" | "complete" | "failed" | "rescue" | "loan";
