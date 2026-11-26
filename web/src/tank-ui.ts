@@ -135,7 +135,7 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
   const virtualPets = virtualHud.querySelector<HTMLButtonElement>('[data-virtual-view="pets"]')!;
 
   function createTank(options: TankOptions): Tank {
-    return new Tank(Math.random, { ...options, playSound: (sound, pitch) => {
+    return new Tank(options.seed === undefined ? Math.random : createSeededRandom(options.seed), { ...options, playSound: (sound, pitch) => {
       if (!options.virtualTank || !screensaver || virtualSave.settings.screensaverSound) audio.play(sound, pitch);
     } });
   }
@@ -1052,4 +1052,15 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
   sandbox.disabled = false;
   menuToggle.disabled = false;
   resize();
+}
+
+function createSeededRandom(seed: number): () => number {
+  let value = seed >>> 0;
+  return () => {
+    value += 0x6D2B79F5;
+    let result = value;
+    result = Math.imul(result ^ (result >>> 15), result | 1);
+    result ^= result + Math.imul(result ^ (result >>> 7), result | 61);
+    return ((result ^ (result >>> 14)) >>> 0) / 4294967296;
+  };
 }
