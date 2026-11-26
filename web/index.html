@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#081c25">
     <title>Insane Aquarium Web</title>
     <link rel="stylesheet" href="./style.css">
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <script type="module" src="./src/main.js"></script>
   </head>
   <body>
@@ -26,6 +27,7 @@
             </div>
             <div class="selector-modes" id="selector-more-modes" role="group" aria-label="More game modes" hidden>
               <button class="selector-mode selector-mode-wide" id="start-sandbox" type="button" disabled>Sandbox</button>
+              <button class="selector-mode selector-mode-wide" id="start-multiplayer" type="button" aria-haspopup="dialog" disabled>Multiplayer</button>
             </div>
             <div class="selector-tools" role="group" aria-label="Menu tools">
               <button class="selector-scores" id="start-scores" type="button" aria-controls="hall-of-fame" disabled>Hall of Fame</button>
@@ -275,6 +277,22 @@
             <button id="sandbox-play-song" type="button" disabled>Play Song</button>
           </div>
           <form method="dialog"><button type="submit">Back to Tank</button></form>
+        </dialog>
+        <dialog class="selector-dialog" id="multiplayer-dialog" aria-labelledby="multiplayer-title">
+          <h2 id="multiplayer-title">Co-op Multiplayer</h2>
+          <p>Play together in one shared aquarium. Rooms support up to four players.</p>
+          <label class="menu-setting">Your name <input id="multiplayer-name" maxlength="18" value="Player" autocomplete="nickname"></label>
+          <label class="menu-setting">Room code <input id="multiplayer-code" maxlength="48" placeholder="fishweb-xxxxxx" autocomplete="off"></label>
+          <div class="menu-actions">
+            <button id="multiplayer-create" type="button">Create Room</button>
+            <button id="multiplayer-join" type="button">Join Room</button>
+            <button id="multiplayer-leave" type="button" disabled>Leave Room</button>
+            <button id="multiplayer-start" type="button" disabled>Start Shared Aquarium</button>
+            <button id="multiplayer-close" type="button">Close</button>
+          </div>
+          <p id="multiplayer-room-code" role="status"></p>
+          <p id="multiplayer-status" role="status">Not connected to a room.</p>
+          <ol id="multiplayer-players" aria-label="Players in room"></ol>
         </dialog>
         <dialog class="selector-dialog virtual-panel" id="virtual-panel" aria-labelledby="virtual-title">
           <header class="virtual-panel-header">

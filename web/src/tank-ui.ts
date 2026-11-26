@@ -108,6 +108,9 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
   setupHallOfFame(records, () => adventureSave.isComplete(FINAL_ADVENTURE_TANK));
 
   let tank: Tank | undefined;
+  let coopActive = false;
+  let coopHost = false;
+  let coopHostTick = 0;
   let chooserMode: ChooserMode | undefined;
   let sandboxSession: Tank | undefined;
   let virtualSession: Tank | undefined;
@@ -135,7 +138,7 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
   const virtualPets = virtualHud.querySelector<HTMLButtonElement>('[data-virtual-view="pets"]')!;
 
   function createTank(options: TankOptions): Tank {
-    return new Tank(Math.random, { ...options, playSound: (sound, pitch) => {
+    return new Tank(options.seed === undefined ? Math.random : createSeededRandom(options.seed), { ...options, playSound: (sound, pitch) => {
       if (!options.virtualTank || !screensaver || virtualSave.settings.screensaverSound) audio.play(sound, pitch);
     } });
   }
@@ -384,7 +387,11 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
     if (lastFrame !== undefined) pendingTime += Math.min(timestamp - lastFrame, 5 * TICK_MS);
     lastFrame = timestamp;
     while (pendingTime >= TICK_MS && tank.state.status === "playing") {
+      if (coopActive && !coopHost && tank.state.tick >= coopHostTick) break;
       tank.step();
+      if (coopActive && coopHost && tank.state.tick % 15 === 0) {
+        sendCoopAction({ action: "tick", tick: tank.state.tick });
+      }
       if (screensaver && virtualSave.settings.screensaverRotate && (tank.state.tick - screensaverStart) % 10800 === 0) {
         const current = tank.background;
         const backgrounds = virtualSave.backgrounds.filter((background) => background !== current);
@@ -396,7 +403,13 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
       pendingTime -= TICK_MS;
       if (pointer && tank.state.tick >= pointer.nextTick) {
         const heldTicks = tank.state.tick - pointer.firstTick;
+        if (coopActive && !coopHost) {
+          sendCoopAction({ action: "click", x: aim.x, y: aim.y, heldTicks });
+          pointer.nextTick = tank.state.tick + 16 - tank.foodLimit;
+          continue;
+        }
         const result = tank.click(aim.x, aim.y, heldTicks);
+        if (coopActive) sendCoopAction({ action: "click", x: aim.x, y: aim.y, heldTicks });
         const interval = tank.alienSystem.battleActive && result !== "food" && result !== "food-limit"
           ? 5 : 16 - tank.foodLimit;
         pointer.nextTick = tank.state.tick + interval;
@@ -428,9 +441,15 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
     }
   }
 
+  function sendCoopAction(payload: Record<string, unknown>): void {
+    document.dispatchEvent(new CustomEvent("fishweb:send-game", { detail: { kind: "action", ...payload } }));
+  }
+
   function actAtAim(): void {
     if (!tank || !active()) return;
+    if (coopActive && !coopHost) { sendCoopAction({ action: "click", x: aim.x, y: aim.y, heldTicks: 0 }); return; }
     handleFoodLimit(tank, tank.click(aim.x, aim.y));
+    if (coopActive) sendCoopAction({ action: "click", x: aim.x, y: aim.y, heldTicks: 0 });
     updateHud();
     draw();
     updateStatus();
@@ -905,6 +924,46 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
     }
   });
 
+  document.addEventListener("fishweb:game-request", (event) => {
+    if (!coopActive || !coopHost || !tank) return;
+    const payload = (event as CustomEvent<Record<string, unknown>>).detail;
+    if (!payload || payload.kind !== "action") return;
+    applyCoopAction(payload);
+    sendCoopAction(payload);
+  });
+  document.addEventListener("fishweb:game", (event) => {
+    if (!coopActive || coopHost || !tank) return;
+    const payload = (event as CustomEvent<Record<string, unknown>>).detail;
+    if (payload?.kind === "action") applyCoopAction(payload);
+  });
+  function applyCoopAction(payload: Record<string, unknown>): void {
+    if (!tank) return;
+    if (payload.action === "tick" && typeof payload.tick === "number") {
+      coopHostTick = Math.max(coopHostTick, Math.floor(payload.tick));
+      return;
+    }
+    if (payload.action === "click" && typeof payload.x === "number" && typeof payload.y === "number") {
+      const heldTicks = typeof payload.heldTicks === "number" ? Math.max(0, Math.min(120, payload.heldTicks)) : 0;
+      handleFoodLimit(tank, tank.click(payload.x, payload.y, heldTicks));
+    } else if (payload.action === "spawn-fish" && typeof payload.kind === "string" && payload.kind in SANDBOX_FISH) {
+      tank.spawnSandboxFish(payload.kind as keyof typeof SANDBOX_FISH);
+    } else if (payload.action === "spawn-pet" && typeof payload.kind === "string" && PET_TYPES.includes(payload.kind as PetType)) {
+      tank.spawnSandboxPet(payload.kind as PetType);
+    } else if (payload.action === "spawn-alien" && typeof payload.kind === "string" && payload.kind in SANDBOX_ALIENS) {
+      tank.spawnSandboxAlien(payload.kind as keyof typeof SANDBOX_ALIENS);
+    } else return;
+    updateHud();
+    draw();
+    updateStatus();
+  }
+  document.addEventListener("fishweb:start-coop", (event) => {
+    const detail = (event as CustomEvent<{ seed?: number; isHost?: boolean }>).detail;
+    if (!detail || typeof detail.seed !== "number") return;
+    coopActive = true;
+    coopHost = detail.isHost === true;
+    coopHostTick = 0;
+    openTank(createTank({ sandbox: true, seed: detail.seed }));
+  });
   start.addEventListener("click", () => showModeChooser("adventure"));
   for (const button of [start, ...Object.values(modeButtons), startVirtual]) {
     button.addEventListener("pointerenter", (event) => {
@@ -1000,16 +1059,25 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
     openTank(createTank({ sandbox: true, tank: Number(sandboxTank.value) }));
   });
   element("sandbox-add-fish").addEventListener("click", () => {
-    tank?.spawnSandboxFish(sandboxFish.value as keyof typeof SANDBOX_FISH);
+    const kind = sandboxFish.value as keyof typeof SANDBOX_FISH;
+    if (coopActive && !coopHost) { sendCoopAction({ action: "spawn-fish", kind }); return; }
+    tank?.spawnSandboxFish(kind);
+    if (coopActive) sendCoopAction({ action: "spawn-fish", kind });
     draw();
   });
   element("sandbox-add-pet").addEventListener("click", () => {
-    tank?.spawnSandboxPet(sandboxPet.value as PetType);
+    const kind = sandboxPet.value as PetType;
+    if (coopActive && !coopHost) { sendCoopAction({ action: "spawn-pet", kind }); return; }
+    tank?.spawnSandboxPet(kind);
+    if (coopActive) sendCoopAction({ action: "spawn-pet", kind });
     updateHud();
     draw();
   });
   element("sandbox-add-alien").addEventListener("click", () => {
-    tank?.spawnSandboxAlien(sandboxAlien.value as keyof typeof SANDBOX_ALIENS);
+    const kind = sandboxAlien.value as keyof typeof SANDBOX_ALIENS;
+    if (coopActive && !coopHost) { sendCoopAction({ action: "spawn-alien", kind }); return; }
+    tank?.spawnSandboxAlien(kind);
+    if (coopActive) sendCoopAction({ action: "spawn-alien", kind });
     draw();
     syncMusic();
   });
@@ -1052,4 +1120,15 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
   sandbox.disabled = false;
   menuToggle.disabled = false;
   resize();
+}
+
+function createSeededRandom(seed: number): () => number {
+  let value = seed >>> 0;
+  return () => {
+    value += 0x6D2B79F5;
+    let result = value;
+    result = Math.imul(result ^ (result >>> 15), result | 1);
+    result ^= result + Math.imul(result ^ (result >>> 7), result | 61);
+    return ((result ^ (result >>> 14)) >>> 0) / 4294967296;
+  };
 }

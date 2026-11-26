@@ -2032,3 +2032,42 @@ button:focus-visible, canvas:focus-visible {
     width: min(calc(100dvh - 1rem), var(--dialog-width));
   }
 }
+
+#multiplayer-dialog {
+  width: min( min(92vw, 32rem), calc(100vw - 2rem) );
+  max-height: min(85dvh, 42rem);
+  overflow: auto;
+  color: #eef9ff;
+  background: linear-gradient(160deg, #173f58, #0b2537);
+  border: 2px solid #d5bd79;
+  border-radius: .8rem;
+  padding: 1.25rem;
+  box-shadow: 0 1rem 3rem #0009;
+}
+#multiplayer-dialog::backdrop { background: #04131dcc; }
+#multiplayer-dialog h2 { margin-top: 0; color: #ffe4a0; }
+#multiplayer-dialog .menu-setting { display: grid; gap: .35rem; margin-block: .7rem; }
+#multiplayer-dialog input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: .55rem;
+  border: 1px solid #8eafbd;
+  border-radius: .35rem;
+  color: #102b3a;
+  background: #f5fbff;
+  font: inherit;
+}
+#multiplayer-dialog .menu-actions { display: flex; flex-wrap: wrap; gap: .45rem; margin-block: 1rem; }
+#multiplayer-dialog button {
+  padding: .5rem .75rem;
+  border: 1px solid #8eafbd;
+  border-radius: .35rem;
+  color: #f5fbff;
+  background: #205a75;
+  font: inherit;
+  cursor: pointer;
+}
+#multiplayer-dialog button:disabled { opacity: .5; cursor: default; }
+#multiplayer-dialog [role="status"] { overflow-wrap: anywhere; }
+#multiplayer-players { padding-left: 1.5rem; }

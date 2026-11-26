@@ -1,6 +1,7 @@
 ﻿import { startTank } from "./tank-ui.js";
 
 import { GameAudio } from "./audio.js";
+import { MultiplayerRoom } from "./multiplayer.js";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#tank")!;
 const audio = new GameAudio();
@@ -15,6 +16,7 @@ if (context) {
 }
 
 setupSelector();
+setupMultiplayer();
 
 function setupHelp(): void {
   const dialog = document.querySelector<HTMLDialogElement>("#help-dialog")!;
@@ -142,3 +144,80 @@ function setupSelector(): void {
   merylButton.disabled = false;
 }
 
+
+function setupMultiplayer(): void {
+  const dialog = document.querySelector<HTMLDialogElement>("#multiplayer-dialog")!;
+  const openButton = document.querySelector<HTMLButtonElement>("#start-multiplayer")!;
+  const nameInput = document.querySelector<HTMLInputElement>("#multiplayer-name")!;
+  const codeInput = document.querySelector<HTMLInputElement>("#multiplayer-code")!;
+  const createButton = document.querySelector<HTMLButtonElement>("#multiplayer-create")!;
+  const joinButton = document.querySelector<HTMLButtonElement>("#multiplayer-join")!;
+  const leaveButton = document.querySelector<HTMLButtonElement>("#multiplayer-leave")!;
+  const startSharedButton = document.querySelector<HTMLButtonElement>("#multiplayer-start")!;
+  const closeButton = document.querySelector<HTMLButtonElement>("#multiplayer-close")!;
+  const codeOutput = document.querySelector<HTMLElement>("#multiplayer-room-code")!;
+  const status = document.querySelector<HTMLElement>("#multiplayer-status")!;
+  const roster = document.querySelector<HTMLOListElement>("#multiplayer-players")!;
+
+  const room = new MultiplayerRoom({
+    status(message) { status.textContent = message; },
+    roomCode(code) {
+      codeOutput.textContent = code ? `Room code: ${code}` : "";
+      if (code) codeInput.value = code;
+    },
+    players(names) {
+      roster.replaceChildren(...names.map((name) => {
+        const item = document.createElement("li");
+        item.textContent = name;
+        return item;
+      }));
+    },
+    gameMessage(payload) {
+      document.dispatchEvent(new CustomEvent("fishweb:game", { detail: payload }));
+      if (payload.kind === "start" && typeof payload.seed === "number") {
+        document.dispatchEvent(new CustomEvent("fishweb:start-coop", { detail: { seed: payload.seed, isHost: false } }));
+      }
+    },
+    gameRequest(payload) { document.dispatchEvent(new CustomEvent("fishweb:game-request", { detail: payload })); },
+  });
+
+  document.addEventListener("fishweb:send-game", (event) => {
+    const payload = (event as CustomEvent<Record<string, unknown>>).detail;
+    if (payload && typeof payload === "object") room.sendGame(payload);
+  });
+  openButton.addEventListener("click", () => dialog.showModal());
+  openButton.disabled = false;
+  closeButton.addEventListener("click", () => dialog.close());
+
+  async function connect(action: "create" | "join"): Promise<void> {
+    createButton.disabled = joinButton.disabled = true;
+    try {
+      if (action === "create") await room.create(nameInput.value);
+      else await room.join(codeInput.value, nameInput.value);
+      leaveButton.disabled = false;
+      startSharedButton.disabled = !room.isHost;
+    } catch (error) {
+      status.textContent = error instanceof Error ? error.message : "Could not connect to that room.";
+    } finally {
+      createButton.disabled = joinButton.disabled = false;
+    }
+  }
+
+  createButton.addEventListener("click", () => void connect("create"));
+  joinButton.addEventListener("click", () => void connect("join"));
+  startSharedButton.addEventListener("click", () => {
+    if (!room.isHost) return;
+    const seed = Math.floor(Math.random() * 0x7fffffff);
+    room.sendGame({ kind: "start", seed });
+    document.dispatchEvent(new CustomEvent("fishweb:start-coop", { detail: { seed, isHost: true } }));
+    dialog.close();
+  });
+  leaveButton.addEventListener("click", () => {
+    room.leave();
+    leaveButton.disabled = true;
+    startSharedButton.disabled = true;
+  });
+  dialog.addEventListener("close", () => {
+    if (room.roomCode) return;
+  });
+}
