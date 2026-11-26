@@ -153,6 +153,7 @@ function setupMultiplayer(): void {
   const createButton = document.querySelector<HTMLButtonElement>("#multiplayer-create")!;
   const joinButton = document.querySelector<HTMLButtonElement>("#multiplayer-join")!;
   const leaveButton = document.querySelector<HTMLButtonElement>("#multiplayer-leave")!;
+  const startSharedButton = document.querySelector<HTMLButtonElement>("#multiplayer-start")!;
   const closeButton = document.querySelector<HTMLButtonElement>("#multiplayer-close")!;
   const codeOutput = document.querySelector<HTMLElement>("#multiplayer-room-code")!;
   const status = document.querySelector<HTMLElement>("#multiplayer-status")!;
@@ -189,6 +190,7 @@ function setupMultiplayer(): void {
       if (action === "create") await room.create(nameInput.value);
       else await room.join(codeInput.value, nameInput.value);
       leaveButton.disabled = false;
+      startSharedButton.disabled = !room.isHost;
     } catch (error) {
       status.textContent = error instanceof Error ? error.message : "Could not connect to that room.";
     } finally {
@@ -198,9 +200,17 @@ function setupMultiplayer(): void {
 
   createButton.addEventListener("click", () => void connect("create"));
   joinButton.addEventListener("click", () => void connect("join"));
+  startSharedButton.addEventListener("click", () => {
+    if (!room.isHost) return;
+    const seed = Math.floor(Math.random() * 0x7fffffff);
+    room.sendGame({ kind: "start", seed });
+    document.dispatchEvent(new CustomEvent("fishweb:start-coop", { detail: { seed } }));
+    dialog.close();
+  });
   leaveButton.addEventListener("click", () => {
     room.leave();
     leaveButton.disabled = true;
+    startSharedButton.disabled = true;
   });
   dialog.addEventListener("close", () => {
     if (room.roomCode) return;
