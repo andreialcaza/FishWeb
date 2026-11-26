@@ -932,9 +932,17 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
     if (payload?.kind === "action") applyCoopAction(payload);
   });
   function applyCoopAction(payload: Record<string, unknown>): void {
-    if (!tank || payload.action !== "click" || typeof payload.x !== "number" || typeof payload.y !== "number") return;
-    const heldTicks = typeof payload.heldTicks === "number" ? Math.max(0, Math.min(120, payload.heldTicks)) : 0;
-    handleFoodLimit(tank, tank.click(payload.x, payload.y, heldTicks));
+    if (!tank) return;
+    if (payload.action === "click" && typeof payload.x === "number" && typeof payload.y === "number") {
+      const heldTicks = typeof payload.heldTicks === "number" ? Math.max(0, Math.min(120, payload.heldTicks)) : 0;
+      handleFoodLimit(tank, tank.click(payload.x, payload.y, heldTicks));
+    } else if (payload.action === "spawn-fish" && typeof payload.kind === "string" && payload.kind in SANDBOX_FISH) {
+      tank.spawnSandboxFish(payload.kind as keyof typeof SANDBOX_FISH);
+    } else if (payload.action === "spawn-pet" && typeof payload.kind === "string" && PET_TYPES.includes(payload.kind as PetType)) {
+      tank.spawnSandboxPet(payload.kind as PetType);
+    } else if (payload.action === "spawn-alien" && typeof payload.kind === "string" && payload.kind in SANDBOX_ALIENS) {
+      tank.spawnSandboxAlien(payload.kind as keyof typeof SANDBOX_ALIENS);
+    } else return;
     updateHud();
     draw();
     updateStatus();
@@ -1041,16 +1049,25 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
     openTank(createTank({ sandbox: true, tank: Number(sandboxTank.value) }));
   });
   element("sandbox-add-fish").addEventListener("click", () => {
-    tank?.spawnSandboxFish(sandboxFish.value as keyof typeof SANDBOX_FISH);
+    const kind = sandboxFish.value as keyof typeof SANDBOX_FISH;
+    if (coopActive && !coopHost) { sendCoopAction({ action: "spawn-fish", kind }); return; }
+    tank?.spawnSandboxFish(kind);
+    if (coopActive) sendCoopAction({ action: "spawn-fish", kind });
     draw();
   });
   element("sandbox-add-pet").addEventListener("click", () => {
-    tank?.spawnSandboxPet(sandboxPet.value as PetType);
+    const kind = sandboxPet.value as PetType;
+    if (coopActive && !coopHost) { sendCoopAction({ action: "spawn-pet", kind }); return; }
+    tank?.spawnSandboxPet(kind);
+    if (coopActive) sendCoopAction({ action: "spawn-pet", kind });
     updateHud();
     draw();
   });
   element("sandbox-add-alien").addEventListener("click", () => {
-    tank?.spawnSandboxAlien(sandboxAlien.value as keyof typeof SANDBOX_ALIENS);
+    const kind = sandboxAlien.value as keyof typeof SANDBOX_ALIENS;
+    if (coopActive && !coopHost) { sendCoopAction({ action: "spawn-alien", kind }); return; }
+    tank?.spawnSandboxAlien(kind);
+    if (coopActive) sendCoopAction({ action: "spawn-alien", kind });
     draw();
     syncMusic();
   });
