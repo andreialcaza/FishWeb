@@ -36,6 +36,7 @@ export class MultiplayerRoom {
   private peer?: PeerClient;
   private host = false;
   private readonly connections = new Map<string, PeerDataConnection>();
+  private readonly names = new Map<string, string>();
   private name = "Player";
   private roomCodeValue = "";
 
@@ -110,9 +111,11 @@ export class MultiplayerRoom {
       return;
     }
     this.connections.set(connection.peer, connection);
+    this.names.set(connection.peer, "Player");
     connection.on("data", (data) => this.receive(data, connection));
     connection.on("close", () => {
       this.connections.delete(connection.peer);
+      this.names.delete(connection.peer);
       this.publishRoster();
     });
     connection.on("error", () => {
@@ -125,6 +128,7 @@ export class MultiplayerRoom {
     if (!data || typeof data !== "object" || !("type" in data)) return;
     const message = data as Partial<RoomMessage>;
     if (message.type === "hello" && this.host && typeof message.name === "string") {
+      this.names.set(connection.peer, cleanName(message.name));
       this.publishRoster();
     } else if (message.type === "leave" && this.host) {
       this.connections.delete(connection.peer);
@@ -137,7 +141,7 @@ export class MultiplayerRoom {
   }
 
   private publishRoster(): void {
-    const players = [this.name, ...this.connections.keys()].slice(0, 4);
+    const players = [this.name, ...[...this.connections.keys()].map((id) => this.names.get(id) ?? "Player")].slice(0, 4);
     this.callbacks.players(players);
     this.broadcast({ type: "roster", players });
   }
@@ -151,6 +155,7 @@ export class MultiplayerRoom {
   private reset(): void {
     for (const connection of this.connections.values()) connection.close();
     this.connections.clear();
+    this.names.clear();
     this.peer?.destroy();
     this.peer = undefined;
     this.host = false;
