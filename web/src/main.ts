@@ -171,8 +171,14 @@ function setupMultiplayer(): void {
         return item;
       }));
     },
+    gameMessage(payload) { document.dispatchEvent(new CustomEvent("fishweb:game", { detail: payload })); },
+    gameRequest(payload) { document.dispatchEvent(new CustomEvent("fishweb:game-request", { detail: payload })); },
   });
 
+  document.addEventListener("fishweb:send-game", (event) => {
+    const payload = (event as CustomEvent<Record<string, unknown>>).detail;
+    if (payload && typeof payload === "object") room.sendGame(payload);
+  });
   openButton.addEventListener("click", () => dialog.showModal());
   openButton.disabled = false;
   closeButton.addEventListener("click", () => dialog.close());
