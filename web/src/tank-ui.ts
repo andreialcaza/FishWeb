@@ -110,6 +110,7 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
   let tank: Tank | undefined;
   let coopActive = false;
   let coopHost = false;
+  let coopHostTick = 0;
   let chooserMode: ChooserMode | undefined;
   let sandboxSession: Tank | undefined;
   let virtualSession: Tank | undefined;
@@ -386,7 +387,11 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
     if (lastFrame !== undefined) pendingTime += Math.min(timestamp - lastFrame, 5 * TICK_MS);
     lastFrame = timestamp;
     while (pendingTime >= TICK_MS && tank.state.status === "playing") {
+      if (coopActive && !coopHost && tank.state.tick >= coopHostTick) break;
       tank.step();
+      if (coopActive && coopHost && tank.state.tick % 15 === 0) {
+        sendCoopAction({ action: "tick", tick: tank.state.tick });
+      }
       if (screensaver && virtualSave.settings.screensaverRotate && (tank.state.tick - screensaverStart) % 10800 === 0) {
         const current = tank.background;
         const backgrounds = virtualSave.backgrounds.filter((background) => background !== current);
@@ -933,6 +938,10 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
   });
   function applyCoopAction(payload: Record<string, unknown>): void {
     if (!tank) return;
+    if (payload.action === "tick" && typeof payload.tick === "number") {
+      coopHostTick = Math.max(coopHostTick, Math.floor(payload.tick));
+      return;
+    }
     if (payload.action === "click" && typeof payload.x === "number" && typeof payload.y === "number") {
       const heldTicks = typeof payload.heldTicks === "number" ? Math.max(0, Math.min(120, payload.heldTicks)) : 0;
       handleFoodLimit(tank, tank.click(payload.x, payload.y, heldTicks));
@@ -952,6 +961,7 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
     if (!detail || typeof detail.seed !== "number") return;
     coopActive = true;
     coopHost = detail.isHost === true;
+    coopHostTick = 0;
     openTank(createTank({ sandbox: true, seed: detail.seed }));
   });
   start.addEventListener("click", () => showModeChooser("adventure"));
