@@ -175,7 +175,7 @@ function setupMultiplayer(): void {
     gameMessage(payload) {
       document.dispatchEvent(new CustomEvent("fishweb:game", { detail: payload }));
       if (payload.kind === "start" && typeof payload.seed === "number") {
-        document.dispatchEvent(new CustomEvent("fishweb:start-coop", { detail: { seed: payload.seed } }));
+        document.dispatchEvent(new CustomEvent("fishweb:start-coop", { detail: { seed: payload.seed, isHost: false } }));
       }
     },
     gameRequest(payload) { document.dispatchEvent(new CustomEvent("fishweb:game-request", { detail: payload })); },
@@ -209,7 +209,7 @@ function setupMultiplayer(): void {
     if (!room.isHost) return;
     const seed = Math.floor(Math.random() * 0x7fffffff);
     room.sendGame({ kind: "start", seed });
-    document.dispatchEvent(new CustomEvent("fishweb:start-coop", { detail: { seed } }));
+    document.dispatchEvent(new CustomEvent("fishweb:start-coop", { detail: { seed, isHost: true } }));
     dialog.close();
   });
   leaveButton.addEventListener("click", () => {
