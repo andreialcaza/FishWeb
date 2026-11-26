@@ -172,7 +172,12 @@ function setupMultiplayer(): void {
         return item;
       }));
     },
-    gameMessage(payload) { document.dispatchEvent(new CustomEvent("fishweb:game", { detail: payload })); },
+    gameMessage(payload) {
+      document.dispatchEvent(new CustomEvent("fishweb:game", { detail: payload }));
+      if (payload.kind === "start" && typeof payload.seed === "number") {
+        document.dispatchEvent(new CustomEvent("fishweb:start-coop", { detail: { seed: payload.seed } }));
+      }
+    },
     gameRequest(payload) { document.dispatchEvent(new CustomEvent("fishweb:game-request", { detail: payload })); },
   });
 
