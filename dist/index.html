@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#081c25">
+    <title>Insane Aquarium Web</title>
+    <link rel="stylesheet" href="./style.css">
+    <script type="module" src="./src/main.js"></script>
+  </head>
+  <body>
+    <main class="aquarium" aria-label="Insane Aquarium Web">
+      <div class="game-frame">
+        <section class="scene-screen start-screen" id="start-screen" aria-label="Main menu">
+          <div class="selector-eyes" aria-hidden="true"></div>
+          <div class="selector-tail" aria-hidden="true">
+            <div class="selector-tail-strip" id="selector-tail-strip"></div>
+          </div>
+          <div class="start-actions">
+            <div class="selector-modes" id="selector-primary-modes" role="group" aria-label="Game modes">
+              <button class="selector-mode selector-mode-wide" id="start-adventure" type="button" aria-controls="mode-screen" disabled>Start Adventure</button>
+              <button class="selector-mode selector-time-trial" id="start-time-trial" type="button" aria-controls="mode-screen" disabled>Time Trial</button>
+              <button class="selector-mode selector-challenge" id="start-challenge" type="button" aria-controls="mode-screen" disabled>Challenge</button>
+              <button class="selector-mode selector-mode-wide selector-virtual-tank" id="start-virtual" type="button"
+                aria-controls="tank-screen" disabled>Virtual Tank</button>
+            </div>
+            <div class="selector-modes" id="selector-more-modes" role="group" aria-label="More game modes" hidden>
+              <button class="selector-mode selector-mode-wide" id="start-sandbox" type="button" disabled>Sandbox</button>
+            </div>
+            <div class="selector-tools" role="group" aria-label="Menu tools">
+              <button class="selector-scores" id="start-scores" type="button" aria-controls="hall-of-fame" disabled>Hall of Fame</button>
+              <button id="start-options" type="button" aria-haspopup="dialog" disabled>Options</button>
+              <button id="start-help" type="button" aria-haspopup="dialog" disabled>Help</button>
+              <button id="start-more" type="button" aria-pressed="false"
+                aria-controls="selector-primary-modes selector-more-modes" disabled>More</button>
+            </div>
+          </div>
+          <button class="selector-meryl" id="selector-meryl" type="button" aria-label="Make Meryl flap her tail" disabled></button>
+          <p class="selector-speech" id="selector-speech" role="status">Welcome to Insane Aquarium Web!</p>
+          <p class="selector-status" id="start-error" role="status" hidden>This browser could not open the fish tank.</p>
+          <p class="selector-status" id="adventure-save-status" role="status" hidden></p>
+          <noscript><p class="selector-status">Enable JavaScript to play Insane Aquarium Web.</p></noscript>
+        </section>
+        <section class="scene-screen hatch-screen" id="hatch-screen" aria-labelledby="hatch-title" hidden>
+          <canvas id="hatch-art" width="640" height="480" aria-hidden="true"></canvas>
+          <div class="hatch-reflection" aria-hidden="true"></div>
+          <h2 id="hatch-title" tabindex="-1">You have found</h2>
+          <button class="hatch-menu" id="hatch-menu" type="button">Menu</button>
+          <div class="hatch-details" role="status">
+            <div id="hatch-reward" hidden>
+              <h3 id="hatch-name"></h3>
+              <p id="hatch-description"></p>
+              <p id="hatch-save-status"></p>
+            </div>
+          </div>
+          <button class="hatch-next" id="hatch-skip" type="button">Skip Animation</button>
+          <button class="hatch-next" id="hatch-continue" type="button" hidden>Continue</button>
+        </section>
+        <section class="scene-screen mode-screen" id="mode-screen" aria-labelledby="mode-title" aria-describedby="mode-description" hidden>
+          <h2 id="mode-title"></h2>
+          <p id="mode-description"></p>
+          <button class="mode-menu" id="mode-menu" type="button"><span class="screen-button-face">Menu</span></button>
+          <ul class="mode-tanks" id="mode-tanks" aria-label="Tanks" role="list"></ul>
+          <button class="mode-final-tank" id="mode-final-tank" type="button" aria-controls="pets-screen" hidden>
+            <span class="screen-button-face"></span>
+          </button>
+          <template id="mode-tank-template">
+            <li class="mode-tank">
+              <img class="mode-tank-preview" width="190" height="121" alt="" hidden>
+              <p class="mode-tank-details" hidden></p>
+              <button class="mode-tank-select" type="button"><span class="screen-button-face"></span></button>
+            </li>
+          </template>
+        </section>
+        <section class="scene-screen selection-screen pets-screen" id="pets-screen" aria-labelledby="pets-title" aria-describedby="pets-summary" hidden>
+          <h2 id="pets-title" tabindex="-1">Choose Your Pets</h2>
+          <button class="selection-action pets-back" id="pets-back" type="button"><span class="screen-button-face">Back to Tanks</span></button>
+          <button class="selection-action pets-menu" id="pets-menu" type="button"><span class="screen-button-face">Menu</span></button>
+          <button class="selection-action pets-bonus" id="pets-bonus" type="button" aria-haspopup="dialog" hidden><span class="screen-button-face"></span></button>
+          <div class="pets-roster" id="pet-choices" role="group" aria-label="Pet roster"></div>
+          <div class="selection-preview pets-preview">
+            <p class="pets-summary" id="pets-summary" role="status"></p>
+            <canvas class="pets-portrait" id="pets-portrait" width="160" height="80" aria-hidden="true"></canvas>
+            <div class="pets-details" id="pets-details" hidden>
+              <h3 id="pets-name"></h3>
+              <p id="pets-description"></p>
+            </div>
+          </div>
+          <div class="pets-play">
+            <button class="selection-action" id="pets-continue" type="button" hidden><span class="screen-button-face">Continue</span></button>
+            <button class="selection-action" id="pets-start" type="button"><span class="screen-button-face">Start Level</span></button>
+          </div>
+        </section>
+        <section class="scores-screen" id="hall-of-fame" aria-labelledby="scores-title" hidden>
+          <header class="scores-header">
+            <h2 id="scores-title">Hall of Fame</h2>
+            <button id="scores-menu" type="button">Menu</button>
+          </header>
+          <h3 id="scores-page-title" aria-live="polite"></h3>
+          <div class="scores-page" id="scores-page" role="region" aria-labelledby="scores-page-title" tabindex="0"></div>
+          <div class="scores-navigation" role="group" aria-label="Hall of Fame pages">
+            <button type="button" data-score-page="adventure" aria-controls="scores-page">Adventure</button>
+            <button type="button" data-score-page="time-trial" aria-controls="scores-page">Time Trial</button>
+            <button type="button" data-score-page="challenge" aria-controls="scores-page">Challenge</button>
+            <button type="button" data-score-page="personal" aria-controls="scores-page">Personal</button>
+          </div>
+        </section>
+        <dialog class="selector-dialog help-dialog help-guide" id="help-dialog" aria-labelledby="help-title">
+          <header class="help-header">
+            <h2 id="help-title">Insane Aquarium Web Help</h2>
+            <button type="submit" id="help-return" form="help-navigation">Menu</button>
+          </header>
+          <div class="help-heading" aria-live="polite" aria-atomic="true">
+            <h3 id="help-topic">The Basics</h3>
+            <p id="help-page-number"></p>
+          </div>
+          <div class="help-pages" id="help-pages" role="region" aria-labelledby="help-topic" tabindex="0">
+            <div data-help-topic="The Basics">
+              <dl class="help-entries">
+                <div><dt>Feed your fish</dt><dd>Click or tap the tank to drop food. A pellet normally costs 5 coins. Hungry guppies turn green. Feed them to help them grow and keep them from starving.</dd></div>
+                <div><dt>Collect coins</dt><dd>Click or tap coins before they disappear. Larger guppies drop more valuable coins.</dd></div>
+                <div><dt>Defend the tank</dt><dd>Shoot aliens by clicking or tapping them. Aim at one side to push them the other way. To defeat Gus, drop pellets for him to eat.</dd></div>
+                <div><dt>Finish a level</dt><dd>Spend your coins at the shop along the top of the tank. Buy all three egg pieces to advance in Adventure or win a Challenge tank.</dd></div>
+              </dl>
+              <p>With the tank focused, use the arrow keys to aim and press <kbd>Space</kbd> or <kbd>Enter</kbd> to act.</p>
+            </div>
+            <div data-help-topic="Upgrades" hidden>
+              <dl class="help-entries">
+                <div><dt>New fish</dt><dd>Buy fish such as guppies and carnivores from the shop. The selection varies by tank, and more slots open as your fish grow.</dd></div>
+                <div><dt>Food quality</dt><dd>Better pellets keep guppies and breeders full longer and help them grow faster.</dd></div>
+                <div><dt>Food quantity</dt><dd>Increase the number of pellets you can have in the tank at once.</dd></div>
+                <div><dt>Laser upgrade</dt><dd>Increase the damage of each shot so you can defeat most aliens in fewer hits.</dd></div>
+              </dl>
+            </div>
+            <div data-help-topic="Pets" hidden>
+              <dl class="help-entries">
+                <div><dt>Unlock pets</dt><dd>Completing an Adventure level unlocks a pet with its own ability.</dd></div>
+                <div><dt>Itchy</dt><dd>The swordfish chases and attacks aliens.</dd></div>
+                <div><dt>Stinky</dt><dd>The snail collects coins near the bottom of the tank.</dd></div>
+                <div><dt>Choose your pets</dt><dd>Adventure levels let you bring up to three pets. Once you have more than three, choose which ones to bring before the next level.</dd></div>
+              </dl>
+            </div>
+            <div data-help-topic="Game Modes" hidden>
+              <dl class="help-entries">
+                <div><dt>Adventure</dt><dd>Clear levels across several tanks and unlock pets. Your browser saves your level and pet choices. After reloading, Continue Adventure starts at the beginning of your saved level.</dd></div>
+                <div><dt>Time Trial</dt><dd>Finish with the highest balance you can before time runs out. Buy eggs to hatch extra pets.</dd></div>
+                <div><dt>Challenge</dt><dd>Buy three egg pieces while prices rise and alien waves grow. Each egg piece resets the other shop prices.</dd></div>
+                <div><dt>Virtual Tank</dt><dd>Spend shells to stock and decorate your own aquarium.</dd></div>
+                <div><dt>Sandbox</dt><dd>Choose More on the web main menu to open Sandbox. Hatch pets for free or use Sandbox Controls to add fish, pets, and aliens.</dd></div>
+              </dl>
+            </div>
+            <div data-help-topic="Virtual Tank" hidden>
+              <dl class="help-entries">
+                <div><dt>Your aquarium</dt><dd>Buy and name fish, feed them, and watch them grow over time.</dd></div>
+                <div><dt>Shells</dt><dd>Earn shells during play and spend them at the Virtual Tank store.</dd></div>
+                <div><dt>Daily stock</dt><dd>The store's selection changes with the real-world date.</dd></div>
+                <div><dt>Rare finds</dt><dd>Check the store on different days to find unusual fish and items.</dd></div>
+              </dl>
+            </div>
+            <div data-help-topic="Virtual Tank Fish" hidden>
+              <dl class="help-entries">
+                <div><dt>Feeding</dt><dd>Feed your fish three times a day to keep them happy.</dd></div>
+                <div><dt>Growth</dt><dd>Fish that eat regularly grow in about a real-world week.</dd></div>
+                <div><dt>Special diets</dt><dd>Use the Feed button for fish that eat something other than pellets.</dd></div>
+                <div><dt>Fish health</dt><dd>Virtual Tank fish stay alive even if they miss meals.</dd></div>
+              </dl>
+            </div>
+            <div data-help-topic="Configuring Virtual Tank" hidden>
+              <dl class="help-entries">
+                <div><dt>Fish</dt><dd>View information about your fish, choose which ones to show, or sell them.</dd></div>
+                <div><dt>Pets</dt><dd>Choose which pets appear in your aquarium.</dd></div>
+                <div><dt>Tank</dt><dd>Pick a background and choose which decorations to display.</dd></div>
+                <div><dt>Screensaver</dt><dd>Open Tank and choose Screensaver to watch your aquarium in fullscreen.</dd></div>
+              </dl>
+            </div>
+            <div data-help-topic="Credits" hidden>
+              <dl class="help-entries">
+                <div><dt>Game design</dt><dd>George Fan</dd></div>
+                <div><dt>Production</dt><dd>Jason Kapalka, Sukhbir Sidhu</dd></div>
+                <div><dt>Programming</dt><dd>George Fan, Thien Tran, Brian Rothstein</dd></div>
+                <div><dt>Technical assistance</dt><dd>David Parton</dd></div>
+                <div><dt>Art</dt><dd>Josh Langley, Walter Wilson</dd></div>
+                <div><dt>Character design</dt><dd>George Fan</dd></div>
+                <div><dt>Music</dt><dd>Jonne Valtonen, George Fan</dd></div>
+                <div><dt>Framework</dt><dd>Brian Fiete, David Parton</dd></div>
+                <div><dt>Business development</dt><dd>Don Walters</dd></div>
+                <div><dt>Quality assurance</dt><dd>Eric Harman, Shawn Conard, Brenna Flood, Chad Zoellner</dd></div>
+              </dl>
+            </div>
+          </div>
+          <form class="help-navigation" id="help-navigation" method="dialog" aria-label="Help pages">
+            <button id="help-previous" type="button" aria-controls="help-pages">Previous</button>
+            <button id="help-next" type="button" aria-controls="help-pages">Next</button>
+          </form>
+        </dialog>
+        <dialog class="selector-dialog help-dialog" id="instructions-dialog" aria-labelledby="instructions-title">
+          <header class="help-header">
+            <h2 id="instructions-title">Instructions</h2>
+            <button type="submit" form="instructions-actions" value="menu">Menu</button>
+          </header>
+          <div class="instructions-cards">
+            <section>
+              <span class="instructions-icon instructions-fish" aria-hidden="true"></span>
+              <h3>Feed your fish</h3>
+              <p>Click or tap the tank to drop pellets. Collect the coins your fish drop.</p>
+            </section>
+            <section>
+              <span class="instructions-icon instructions-alien" aria-hidden="true"></span>
+              <h3>Fight off aliens</h3>
+              <p>Click or tap an alien to shoot it and protect your fish.</p>
+            </section>
+            <section>
+              <span class="instructions-icon instructions-egg" aria-hidden="true"></span>
+              <h3>Complete the egg</h3>
+              <p>Buy three egg pieces from the shop to advance and unlock a pet.</p>
+            </section>
+          </div>
+          <form class="help-navigation" id="instructions-actions" method="dialog">
+            <button type="submit" value="continue" autofocus>Continue</button>
+          </form>
+        </dialog>
+        <dialog class="selector-dialog" id="options-dialog" aria-labelledby="options-title">
+          <h2 id="options-title">Options</h2>
+          <div class="audio-settings">
+            <label class="menu-setting audio-setting">Music
+              <input data-audio-volume="music" type="range" min="0" max="100">
+            </label>
+            <label class="menu-setting audio-setting">Sound effects
+              <input data-audio-volume="effects" type="range" min="0" max="100">
+            </label>
+          </div>
+          <p><button id="fullscreen" type="button" aria-pressed="false">Fullscreen</button></p>
+          <p id="fullscreen-status" role="status" hidden>Fullscreen is unavailable in this browser view.</p>
+          <form method="dialog">
+            <button type="submit">Back</button>
+          </form>
+        </dialog>
+        <dialog class="selector-dialog" id="run-dialog" aria-labelledby="run-title" aria-describedby="run-message">
+          <h2 id="run-title"></h2>
+          <p id="run-message">Continue your run or restart this tank from the beginning?</p>
+          <form class="run-actions" method="dialog">
+            <button type="submit" value="cancel">Cancel</button>
+            <button type="submit" value="continue" autofocus>Continue</button>
+            <button type="submit" value="restart">Restart</button>
+          </form>
+        </dialog>
+        <dialog class="selector-dialog" id="level-dialog" aria-labelledby="level-title">
+          <h2 id="level-title"></h2>
+          <p id="level-message"></p>
+          <p id="level-save-status" role="status" hidden></p>
+          <button id="level-bonus" type="button" aria-haspopup="dialog" hidden></button>
+          <button id="level-tanks" type="button" hidden>Choose Tank</button>
+          <button id="level-continue" type="button" autofocus>Continue</button>
+        </dialog>
+        <dialog class="selector-dialog" id="sandbox-dialog" aria-labelledby="sandbox-title">
+          <h2 id="sandbox-title">Sandbox</h2>
+          <div class="sandbox-actions">
+            <label for="sandbox-tank">Tank layout</label>
+            <select id="sandbox-tank"></select>
+            <button id="sandbox-reset" type="button">Reset Tank</button>
+            <label for="sandbox-fish">Fish</label>
+            <select id="sandbox-fish"></select>
+            <button id="sandbox-add-fish" type="button">Add Fish</button>
+            <label for="sandbox-pet">Pet</label>
+            <select id="sandbox-pet"></select>
+            <button id="sandbox-add-pet" type="button">Add Pet</button>
+            <label for="sandbox-alien">Alien</label>
+            <select id="sandbox-alien"></select>
+            <button id="sandbox-add-alien" type="button">Add Alien</button>
+            <label for="sandbox-food">Food to drop</label>
+            <select id="sandbox-food"></select>
+            <span></span>
+            <label for="sandbox-song">Fish song</label>
+            <select id="sandbox-song" disabled><option>Loading songs…</option></select>
+            <button id="sandbox-play-song" type="button" disabled>Play Song</button>
+          </div>
+          <form method="dialog"><button type="submit">Back to Tank</button></form>
+        </dialog>
+        <dialog class="selector-dialog virtual-panel" id="virtual-panel" aria-labelledby="virtual-title">
+          <header class="virtual-panel-header">
+            <h2 id="virtual-title" tabindex="-1">Tank Setup</h2>
+            <button id="virtual-close" type="button">Return to Tank</button>
+          </header>
+          <div class="virtual-content" id="virtual-content"></div>
+        </dialog>
+        <dialog class="selector-dialog virtual-prompt" id="virtual-prompt" aria-labelledby="virtual-prompt-title">
+          <form id="virtual-prompt-form">
+            <h2 id="virtual-prompt-title"></h2>
+            <p id="virtual-prompt-message"></p>
+            <label id="virtual-name-field" hidden>Fish name <input id="virtual-name" type="text" maxlength="12"></label>
+            <div id="virtual-prompt-settings"></div>
+            <div class="virtual-actions">
+              <button id="virtual-cancel" type="button">Cancel</button>
+              <button id="virtual-confirm" type="submit">OK</button>
+            </div>
+          </form>
+        </dialog>
+        <section id="virtual-store" class="scene-screen virtual-store" aria-labelledby="virtual-store-title" hidden>
+          <h2 id="virtual-store-title" class="visually-hidden" tabindex="-1">The Fish Emporium</h2>
+          <canvas id="virtual-store-art" width="640" height="480" aria-hidden="true"></canvas>
+          <div class="virtual-store-clerk" aria-hidden="true"></div>
+          <div id="virtual-store-stock" role="group" aria-label="Store stock"></div>
+          <p id="virtual-store-speech" class="virtual-store-speech" role="status" hidden></p>
+          <output id="virtual-store-shells" class="virtual-store-shells" aria-label="Shell balance"></output>
+          <button id="virtual-store-back" class="virtual-store-back" type="button">Back</button>
+        </section>
+        <section class="scene-screen selection-screen virtual-fish-screen" id="virtual-fish-screen" aria-labelledby="virtual-fish-title" hidden>
+          <h2 id="virtual-fish-title" tabindex="-1">Fish Setup</h2>
+          <div class="virtual-fish-bulk" role="group" aria-label="Tank visibility">
+            <button class="selection-action" id="virtual-fish-hide-all" type="button"><span class="screen-button-face">Hide All</span></button>
+            <button class="selection-action" id="virtual-fish-show-all" type="button"><span class="screen-button-face">Show All</span></button>
+          </div>
+          <div id="virtual-fish-roster" role="group" aria-label="Fish roster"></div>
+          <div class="selection-preview virtual-fish-preview" id="virtual-fish-preview"></div>
+          <div class="virtual-fish-actions" id="virtual-fish-actions" role="group" aria-label="Selected fish actions"></div>
+          <button class="virtual-fish-back" id="virtual-fish-back" type="button">Return to Tank</button>
+        </section>
+        <div id="tank-screen" hidden>
+          <div class="tank-hud" role="group" aria-label="Tank controls">
+            <div id="shop" role="group" aria-label="Tank shop"></div>
+            <div class="virtual-controls" id="virtual-controls" role="group" aria-label="Virtual Tank controls" hidden>
+              <button class="virtual-control" type="button" data-virtual-view="store" style="--slot: 2" aria-controls="virtual-store">Store</button>
+              <button class="virtual-control" type="button" data-virtual-view="fish" style="--slot: 3" aria-controls="virtual-fish-screen">Fish</button>
+              <button class="virtual-control" type="button" data-virtual-view="pets" style="--slot: 4" aria-controls="pets-screen">Pets</button>
+              <button class="virtual-control" type="button" data-virtual-view="feed" style="--slot: 1"
+                aria-expanded="false" aria-controls="virtual-food-picker">Feed</button>
+              <button class="virtual-control" type="button" data-virtual-view="tank" style="--slot: 5" aria-haspopup="dialog">Tank</button>
+              <button class="virtual-control" id="virtual-back" type="button" style="--slot: 0">Back</button>
+            </div>
+            <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Menu"
+              aria-expanded="false" aria-controls="tank-menu" disabled></button>
+            <div class="balance">
+              <span class="visually-hidden" id="balance-kind">Coins</span>
+              <span id="balance">&mdash;</span>
+            </div>
+          </div>
+          <div class="tank-water">
+            <p id="pointer-help" class="visually-hidden">Click or tap to drop food, collect coins, or shoot aliens.</p>
+            <p id="keyboard-help" class="visually-hidden">Use the arrow keys to aim and Space or Enter to act.</p>
+            <canvas id="tank" width="768" height="400" tabindex="0" aria-label="Fish tank" aria-describedby="pointer-help keyboard-help">
+              This aquarium requires support for HTML canvas.
+            </canvas>
+            <p id="mode-status" class="tank-mode-status" hidden></p>
+            <p id="feedback" class="tank-feedback" role="status"></p>
+            <div id="virtual-food-picker" class="virtual-food-picker" role="group" aria-label="Special food" hidden></div>
+            <button id="virtual-stop-screensaver" type="button" hidden>Exit Screensaver</button>
+          </div>
+          <div class="tank-menu" id="tank-menu" hidden>
+            <section class="menu-panel" role="dialog" aria-labelledby="menu-title">
+              <h2 id="menu-title">Options</h2>
+              <div class="menu-settings">
+                <label class="menu-setting">
+                  <input id="tank-fullscreen" type="checkbox" aria-describedby="tank-fullscreen-status">
+                  Fullscreen
+                </label>
+                <p class="menu-setting-status" id="tank-fullscreen-status" role="status" hidden>Fullscreen is unavailable in this browser view.</p>
+                <label class="menu-setting audio-setting">Music
+                  <input data-audio-volume="music" type="range" min="0" max="100">
+                </label>
+                <label class="menu-setting audio-setting">Sound effects
+                  <input data-audio-volume="effects" type="range" min="0" max="100">
+                </label>
+                <label class="menu-setting" id="presto-control" hidden>
+                  Presto’s form
+                  <select id="presto-form"></select>
+                </label>
+              </div>
+              <div class="menu-actions">
+                <button id="options-help" type="button" aria-haspopup="dialog">Help</button>
+                <button id="sandbox-tools" type="button" aria-haspopup="dialog" hidden>Sandbox Controls</button>
+                <button id="main-menu" type="button">Back to Main Menu</button>
+                <button class="menu-resume" id="options-ok" type="button">OK</button>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
