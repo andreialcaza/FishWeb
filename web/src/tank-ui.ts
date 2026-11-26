@@ -108,6 +108,8 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
   setupHallOfFame(records, () => adventureSave.isComplete(FINAL_ADVENTURE_TANK));
 
   let tank: Tank | undefined;
+  let coopActive = false;
+  let coopHost = false;
   let chooserMode: ChooserMode | undefined;
   let sandboxSession: Tank | undefined;
   let virtualSession: Tank | undefined;
@@ -396,7 +398,13 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
       pendingTime -= TICK_MS;
       if (pointer && tank.state.tick >= pointer.nextTick) {
         const heldTicks = tank.state.tick - pointer.firstTick;
+        if (coopActive && !coopHost) {
+          sendCoopAction({ action: "click", x: aim.x, y: aim.y, heldTicks });
+          pointer.nextTick = tank.state.tick + 16 - tank.foodLimit;
+          continue;
+        }
         const result = tank.click(aim.x, aim.y, heldTicks);
+        if (coopActive) sendCoopAction({ action: "click", x: aim.x, y: aim.y, heldTicks });
         const interval = tank.alienSystem.battleActive && result !== "food" && result !== "food-limit"
           ? 5 : 16 - tank.foodLimit;
         pointer.nextTick = tank.state.tick + interval;
@@ -428,9 +436,15 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
     }
   }
 
+  function sendCoopAction(payload: Record<string, unknown>): void {
+    document.dispatchEvent(new CustomEvent("fishweb:send-game", { detail: { kind: "action", ...payload } }));
+  }
+
   function actAtAim(): void {
     if (!tank || !active()) return;
+    if (coopActive && !coopHost) { sendCoopAction({ action: "click", x: aim.x, y: aim.y, heldTicks: 0 }); return; }
     handleFoodLimit(tank, tank.click(aim.x, aim.y));
+    if (coopActive) sendCoopAction({ action: "click", x: aim.x, y: aim.y, heldTicks: 0 });
     updateHud();
     draw();
     updateStatus();
@@ -905,9 +919,31 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
     }
   });
 
+  document.addEventListener("fishweb:game-request", (event) => {
+    if (!coopActive || !coopHost || !tank) return;
+    const payload = (event as CustomEvent<Record<string, unknown>>).detail;
+    if (!payload || payload.kind !== "action") return;
+    applyCoopAction(payload);
+    sendCoopAction(payload);
+  });
+  document.addEventListener("fishweb:game", (event) => {
+    if (!coopActive || coopHost || !tank) return;
+    const payload = (event as CustomEvent<Record<string, unknown>>).detail;
+    if (payload?.kind === "action") applyCoopAction(payload);
+  });
+  function applyCoopAction(payload: Record<string, unknown>): void {
+    if (!tank || payload.action !== "click" || typeof payload.x !== "number" || typeof payload.y !== "number") return;
+    const heldTicks = typeof payload.heldTicks === "number" ? Math.max(0, Math.min(120, payload.heldTicks)) : 0;
+    handleFoodLimit(tank, tank.click(payload.x, payload.y, heldTicks));
+    updateHud();
+    draw();
+    updateStatus();
+  }
   document.addEventListener("fishweb:start-coop", (event) => {
-    const detail = (event as CustomEvent<{ seed?: number }>).detail;
+    const detail = (event as CustomEvent<{ seed?: number; isHost?: boolean }>).detail;
     if (!detail || typeof detail.seed !== "number") return;
+    coopActive = true;
+    coopHost = detail.isHost === true;
     openTank(createTank({ sandbox: true, seed: detail.seed }));
   });
   start.addEventListener("click", () => showModeChooser("adventure"));
