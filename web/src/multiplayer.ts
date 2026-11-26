@@ -85,6 +85,8 @@ export class MultiplayerRoom {
       peer.on("open", () => {
         const connection = peer.connect(room, { reliable: true });
         this.connections.set(room, connection);
+        this.roomCodeValue = room;
+        this.callbacks.roomCode(room);
         connection.on("open", () => {
           connection.send({ type: "hello", name: this.name } satisfies RoomMessage);
           this.callbacks.status("Connected. Waiting for the room host.");
@@ -132,6 +134,7 @@ export class MultiplayerRoom {
     });
     connection.on("error", () => {
       this.connections.delete(connection.peer);
+      this.names.delete(connection.peer);
       this.publishRoster();
     });
   }
