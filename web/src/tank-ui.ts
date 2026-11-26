@@ -905,6 +905,11 @@ export function startTank(ctx: CanvasRenderingContext2D, audio: GameAudio): void
     }
   });
 
+  document.addEventListener("fishweb:start-coop", (event) => {
+    const detail = (event as CustomEvent<{ seed?: number }>).detail;
+    if (!detail || typeof detail.seed !== "number") return;
+    openTank(createTank({ sandbox: true, seed: detail.seed }));
+  });
   start.addEventListener("click", () => showModeChooser("adventure"));
   for (const button of [start, ...Object.values(modeButtons), startVirtual]) {
     button.addEventListener("pointerenter", (event) => {
