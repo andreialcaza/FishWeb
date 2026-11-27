@@ -25,7 +25,7 @@ type RoomMessage =
   | { type: "hello"; name: string }
   | { type: "roster"; players: string[] }
   | { type: "leave" }
-  | { type: "game"; payload: Record<string, unknown> }
+  | { type: "game"; sequence: number; payload: Record<string, unknown> }
   | { type: "game-request"; payload: Record<string, unknown> };
 
 export interface MultiplayerCallbacks {
@@ -43,6 +43,8 @@ export class MultiplayerRoom {
   private readonly names = new Map<string, string>();
   private name = "Player";
   private roomCodeValue = "";
+  private nextGameSequence = 0;
+  private lastGameSequence = 0;
 
   constructor(private readonly callbacks: MultiplayerCallbacks) {}
 
@@ -109,8 +111,9 @@ export class MultiplayerRoom {
   }
 
   sendGame(payload: Record<string, unknown>): void {
-    if (this.host) this.broadcast({ type: "game", payload });
-    else {
+    if (this.host) {
+      this.broadcast({ type: "game", sequence: ++this.nextGameSequence, payload });
+    } else {
       const connection = this.connections.get(this.roomCodeValue);
       if (connection?.open) connection.send({ type: "game-request", payload });
     }
@@ -147,7 +150,10 @@ export class MultiplayerRoom {
       this.publishRoster();
     } else if (message.type === "game-request" && this.host && message.payload && typeof message.payload === "object") {
       this.callbacks.gameRequest(message.payload as Record<string, unknown>);
-    } else if (message.type === "game" && !this.host && message.payload && typeof message.payload === "object") {
+    } else if (message.type === "game" && !this.host && message.payload && typeof message.payload === "object"
+      && typeof message.sequence === "number" && Number.isSafeInteger(message.sequence)
+      && message.sequence > this.lastGameSequence) {
+      this.lastGameSequence = message.sequence;
       this.callbacks.gameMessage(message.payload as Record<string, unknown>);
     } else if (message.type === "leave" && this.host) {
       this.connections.delete(connection.peer);
@@ -179,6 +185,8 @@ export class MultiplayerRoom {
     this.peer = undefined;
     this.host = false;
     this.roomCodeValue = "";
+    this.nextGameSequence = 0;
+    this.lastGameSequence = 0;
   }
 }
 
